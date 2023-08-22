@@ -1,5 +1,5 @@
 import "./App.css";
-import Stage from "./components/Stage";
+import Stage from "./components/machine-consumers/Stage";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { containers } from "./services/testing-hardcoded.service";
 

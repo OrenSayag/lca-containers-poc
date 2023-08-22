@@ -1,9 +1,9 @@
-import { BaseComponentParams } from "../types";
+import { BaseComponentParams } from "../../types";
 import { ChangeEventHandler, FC, useEffect } from "react";
-import Button from "./Button";
-import { ContainerWithRef } from "../assets/machines/containers.machine";
+import Button from "../Button";
+import { ContainerWithRef } from "../../assets/machines/containers.machine";
 import { useActor } from "@xstate/react";
-import TextPop from "./TextPop";
+import TextPop from "../TextPop";
 
 interface Params extends BaseComponentParams {
   container: ContainerWithRef;

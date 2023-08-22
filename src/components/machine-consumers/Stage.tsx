@@ -1,14 +1,14 @@
-import { BaseComponentParams, Container } from "../types";
+import { BaseComponentParams, Container } from "../../types";
 import { FC, useEffect } from "react";
 import {
   isContainerEmpty,
   useContainersMachine,
-} from "../services/container.service";
-import ContainerArrayLengthInput from "./ContainerArrayLengthInput";
-import ContainersList from "./ContainersList";
-import ProgressBar from "./ProgressBar";
-import Button from "./Button";
-import NodePop from "./NodePop";
+} from "../../services/container.service";
+import ContainerArrayLengthInput from "../ContainerArrayLengthInput";
+import ContainersList from "../ContainersList";
+import ProgressBar from "../ProgressBar";
+import Button from "../Button";
+import NodePop from "../NodePop";
 import ContainerDummy from "./ContainerDummy";
 import { useNavigate, useParams } from "react-router-dom";
 
