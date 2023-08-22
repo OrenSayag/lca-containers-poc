@@ -1,5 +1,5 @@
 import { BaseComponentParams, Container } from "../types";
-import { FC } from "react";
+import { FC, useEffect } from "react";
 import {
   isContainerEmpty,
   useContainersMachine,
@@ -10,27 +10,60 @@ import ProgressBar from "./ProgressBar";
 import Button from "./Button";
 import NodePop from "./NodePop";
 import ContainerDummy from "./ContainerDummy";
+import { useNavigate, useParams } from "react-router-dom";
 
 interface Params extends BaseComponentParams {
   containers?: Container[];
 }
-
 const Stage: FC<Params> = ({ containers }) => {
-  const [state, send] = useContainersMachine(containers);
+  const [state, send] = useContainersMachine();
+  const navigate = useNavigate();
+
+  const { uuid: uuidParam } = useParams();
+
+  const onEditItem = (uuid: string) => {
+    if (!uuidParam) {
+      navigate(`${uuid}`);
+    }
+    send("EDIT_CONTAINER", { uuid });
+  };
+
+  useEffect(() => {
+    if (!state.context.containers && Array.isArray(containers)) {
+      send("SET_EXISTING_CONTAINERS", { containers });
+    }
+  }, [containers]);
+
+  useEffect(() => {
+    if (!state.context.containers) {
+      if (!containers) {
+        navigate("/");
+      }
+      return;
+    }
+    const isUUIDValid = state.context.containers.some(
+      (c) => c.data.uuid === uuidParam
+    );
+    if (!isUUIDValid) {
+      return navigate("/");
+    }
+    onEditItem(uuidParam!);
+  }, [uuidParam, state.context.containers]);
   const onConfirmArrayLength = (length: number) => {
     send("SET_CONTAINER_ARRAY_LENGTH", { length });
   };
   const onDeleteItem = (uuid: string) => {
     send("REMOVE_CONTAINER", { uuid });
   };
-  const onEditItem = (uuid: string) => {
-    send("EDIT_CONTAINER", { uuid });
-  };
   const onAddItem = () => {
     send("ADD_CONTAINER");
   };
   const onRemoveEmptyContainers = () => {
     send("REMOVE_EMPTY_CONTAINERS");
+  };
+
+  const onExitItem = () => {
+    navigate("/");
   };
 
   return (
@@ -60,10 +93,13 @@ const Stage: FC<Params> = ({ containers }) => {
               label={"מחק מיכלים ללא פריטים"}
             />
           </div>
-          {state.context.currentContainer && (
+          {uuidParam && state.context.currentContainer && (
             <NodePop
               node={
-                <ContainerDummy container={state.context.currentContainer} />
+                <ContainerDummy
+                  onExit={onExitItem}
+                  container={state.context.currentContainer}
+                />
               }
             />
           )}

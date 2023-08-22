@@ -3,6 +3,7 @@ import { Container } from "../../types";
 
 export type Context = {
   data: Container;
+  originalData: Container;
   dirty: boolean;
 };
 
@@ -19,6 +20,7 @@ export const createContainerMachine = (data: Container) =>
       id: "Item Machine",
       context: {
         data,
+        originalData: data,
         dirty: false,
       },
       initial: "Initial",
@@ -34,6 +36,7 @@ export const createContainerMachine = (data: Container) =>
               },
               {
                 target: "Update",
+                actions: "resetDirty",
                 description: "Params: { data: TItem }",
               },
             ],
@@ -48,19 +51,30 @@ export const createContainerMachine = (data: Container) =>
             ],
             SAVE: {
               target: "Initial",
-              actions: {
-                type: "sendParentSave",
-                params: {},
-              },
+              actions: [
+                {
+                  type: "sendParentSave",
+                  params: {},
+                },
+                "resetDirty",
+              ],
               description: "Sends to parent: ITEM.SAVE",
             },
-            CANCEL: {
-              target: "Initial",
-              actions: {
-                type: "sendParentCancel",
-                params: {},
+            CANCEL: [
+              {
+                target: "Confirm Exit",
+                cond: "isDirty",
               },
-            },
+              {
+                target: "Initial",
+                actions: [
+                  {
+                    type: "sendParentCancel",
+                    params: {},
+                  },
+                ],
+              },
+            ],
           },
         },
         Update: {
@@ -84,10 +98,6 @@ export const createContainerMachine = (data: Container) =>
             },
             CANCEL: {
               target: "Initial",
-              actions: {
-                type: "sendParentCancel",
-                params: {},
-              },
             },
             SAVE: {
               target: "Initial",
@@ -118,6 +128,12 @@ export const createContainerMachine = (data: Container) =>
 
         setDirty: assign(() => {
           return {
+            dirty: true,
+          };
+        }),
+
+        resetDirty: assign(() => {
+          return {
             dirty: false,
           };
         }),
@@ -133,7 +149,10 @@ export const createContainerMachine = (data: Container) =>
       guards: {
         hasDataChanged: (ctx, e) => {
           if (e.type !== "UPDATE") return false;
-          return JSON.stringify(ctx.data) !== JSON.stringify(e.data);
+          return (
+            JSON.stringify(ctx.originalData) !==
+            JSON.stringify({ ...ctx.data, ...e.data })
+          );
         },
 
         isDirty: (ctx) => ctx.dirty,

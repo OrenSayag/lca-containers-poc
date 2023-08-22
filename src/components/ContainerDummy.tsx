@@ -1,24 +1,30 @@
 import { BaseComponentParams } from "../types";
-import { ChangeEventHandler, FC } from "react";
+import { ChangeEventHandler, FC, useEffect } from "react";
 import Button from "./Button";
 import { ContainerWithRef } from "../assets/machines/containers.machine";
 import { useActor } from "@xstate/react";
+import TextPop from "./TextPop";
 
 interface Params extends BaseComponentParams {
   container: ContainerWithRef;
+  onExit: () => void;
 }
 
-const ContainerDummy: FC<Params> = ({ container }) => {
+const ContainerDummy: FC<Params> = ({ container, onExit }) => {
   const [state, send] = useActor<any>(container.ref);
   const onBarcodeChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    send({ type: "UPDATE", data: { barcode: e.target.value } });
+    send({ type: "UPDATE", data: { barcode: e.target.value || undefined } });
   };
   const onSave = () => {
     send("SAVE");
+    onExit();
   };
   const onCancel = () => {
     send("CANCEL");
+    onExit();
   };
+
+  useEffect(() => {}, [state]);
   return (
     <div className={"flex flex-col gap-3 p-4"}>
       <input
@@ -29,6 +35,20 @@ const ContainerDummy: FC<Params> = ({ container }) => {
       <pre dir={"rtl"}>{JSON.stringify({ ctx: (state as any).context })}</pre>
       <Button onClick={onSave} label={"Save"} />
       <Button onClick={onCancel} label={"Cancel"} />
+      {(state as any).matches("Confirm Exit") && (
+        <TextPop
+          text={"יש שינויים שלא נשמרו. האם אתם בטוחים?"}
+          title={"תשומת לב"}
+          cancel={{
+            text: "ביטול",
+            on: () => send("CANCEL"),
+          }}
+          ok={{
+            text: "יציאה ללא שמירה",
+            on: () => send("OK"),
+          }}
+        />
+      )}
     </div>
   );
 };

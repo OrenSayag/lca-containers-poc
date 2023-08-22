@@ -7,6 +7,7 @@ import { v4 as uuid } from "uuid";
 
 type Event =
   | { type: "SET_CONTAINER_ARRAY_LENGTH"; length: number }
+  | { type: "SET_EXISTING_CONTAINERS"; containers: Container[] }
   | { type: "ADD_CONTAINER" }
   | { type: "REMOVE_CONTAINER"; uuid: string }
   | { type: "EDIT_CONTAINER"; uuid: string }
@@ -71,6 +72,14 @@ export const containersMachine = createMachine(
                   params: {},
                 },
                 description: "Params: { length: number }",
+                internal: true,
+              },
+              SET_EXISTING_CONTAINERS: {
+                actions: {
+                  type: "setExistingContainers",
+                  params: {},
+                },
+                description: "Params: { containers: Container[] }",
                 internal: true,
               },
             },
@@ -204,25 +213,43 @@ export const containersMachine = createMachine(
     actions: {
       initContainers: assign({
         containers: (_, event) => {
+          const createNewContainers = () => {
+            if (event.type !== "SET_CONTAINER_ARRAY_LENGTH") {
+              return;
+            }
+            const arr = [];
+            for (let i = 0; i < event.length; i++) {
+              const id = uuid();
+              arr.push({
+                ref: spawn<any>(createContainerMachine({ uuid: id })),
+                data: { uuid: id },
+              });
+            }
+            if (event.type !== "SET_CONTAINER_ARRAY_LENGTH") {
+              return;
+            }
+            return arr;
+          };
           if (event.type !== "SET_CONTAINER_ARRAY_LENGTH") {
             return;
           }
-          console.log("Fired event SET_CONTAINER_ARRAY_LENGTH");
-          const arr = [];
-          for (let i = 0; i < event.length; i++) {
-            const id = uuid();
-            arr.push({
-              ref: spawn<any>(createContainerMachine({ uuid: id })),
-              data: { uuid: id },
-            });
-          }
-          return arr;
+          return createNewContainers();
+        },
+      }),
+
+      setExistingContainers: assign({
+        containers: (_, e) => {
+          if (e.type !== "SET_EXISTING_CONTAINERS") return;
+          const containers = e.containers.map((c) => ({
+            ref: spawn<any>(createContainerMachine({ uuid: c.uuid })),
+            data: { uuid: c.uuid },
+          }));
+          return containers;
         },
       }),
 
       addContainer: assign((context) => {
         if (context.containers === undefined) return {};
-        console.log("Fire addContainer");
         const id = uuid();
         return {
           containers: [
@@ -237,7 +264,6 @@ export const containersMachine = createMachine(
 
       removeContainer: assign((context, event) => {
         if (event.type !== "REMOVE_CONTAINER") return {};
-        console.log("Fire removeContainer");
         return {
           containers: context.containers?.filter(
             (c) => c.data.uuid !== event.uuid
@@ -246,7 +272,6 @@ export const containersMachine = createMachine(
       }),
 
       setCurrentContainer: assign((ctx, e) => {
-        console.log(e);
         if (e.type !== "EDIT_CONTAINER") return {};
         const cont = ctx.containers!.find((c) => c.data.uuid === e.uuid);
         return {
@@ -258,9 +283,12 @@ export const containersMachine = createMachine(
       }),
 
       saveContainerData: assign((context, event) => {
-        console.log("Fire CONTAINER.SAVE");
-        if (event.type !== "CONTAINER.SAVE" || context.containers === undefined)
+        if (
+          event.type !== "CONTAINER.SAVE" ||
+          context.containers === undefined
+        ) {
           return {};
+        }
         return {
           containers: context.containers.map((c) => {
             if (c.data.uuid === event.data.uuid) {
@@ -273,7 +301,6 @@ export const containersMachine = createMachine(
       }),
 
       unsetCurrentContainer: assign(() => {
-        console.log("Action unsetCurrentContainer");
         return {
           currentContainer: undefined,
         };
