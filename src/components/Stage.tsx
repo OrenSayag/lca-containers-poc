@@ -105,9 +105,9 @@ const Stage: FC<Params> = ({ containers }) => {
           )}
         </div>
       )}
-      <pre dir={"ltr"}>
-        {JSON.stringify({ state: state.value, ctx: state.context }, null, 2)}
-      </pre>
+      {/*<pre dir={"ltr"}>*/}
+      {/*  {JSON.stringify({ state: state.value, ctx: state.context }, null, 2)}*/}
+      {/*</pre>*/}
     </div>
   );
 };

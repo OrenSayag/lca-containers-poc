@@ -21,7 +21,9 @@ const ContainerDummy: FC<Params> = ({ container, onExit }) => {
   };
   const onCancel = () => {
     send("CANCEL");
-    onExit();
+    if (!(state as any).context.dirty) {
+      onExit();
+    }
   };
 
   useEffect(() => {}, [state]);
@@ -45,7 +47,10 @@ const ContainerDummy: FC<Params> = ({ container, onExit }) => {
           }}
           ok={{
             text: "יציאה ללא שמירה",
-            on: () => send("OK"),
+            on: () => {
+              send("OK");
+              onExit();
+            },
           }}
         />
       )}
